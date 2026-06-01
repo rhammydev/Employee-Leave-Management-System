@@ -10,10 +10,11 @@
 using System;
 using System.Reflection;
 
+[assembly: Microsoft.Extensions.Configuration.UserSecrets.UserSecretsIdAttribute("a61e8ed8-3165-4835-8125-5ef514dcf653")]
 [assembly: System.Reflection.AssemblyCompanyAttribute("EmployeeLeaveManagementSystem")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a6856554933d09c9c67999a6dd77ccc043ab6148")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+330246b75b1ed9468eff2bb55e5152b6a2bb407b")]
 [assembly: System.Reflection.AssemblyProductAttribute("EmployeeLeaveManagementSystem")]
 [assembly: System.Reflection.AssemblyTitleAttribute("EmployeeLeaveManagementSystem")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

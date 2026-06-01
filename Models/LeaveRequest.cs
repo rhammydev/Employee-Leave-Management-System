@@ -2,11 +2,11 @@ namespace EmployeeLeaveManagementSystem.Models;
 
 public class LeaveRequest
 {
-    public int LeaveId { get; set; }
+    public int Id { get; set; }
     
     public int EmployeeId { get; set; }
     
-    public string LeaveTypeId { get; set; }
+    public LeaveType LeaveType { get; set; }
     
     public DateOnly StartDate { get; set; }
     
@@ -17,4 +17,6 @@ public class LeaveRequest
     public LeaveStatus  Status { get; set; }
     
     public DateTime DateCreated { get; set; }
+    
+    public Employee Employee { get; set; }
 }

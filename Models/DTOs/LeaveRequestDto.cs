@@ -4,7 +4,7 @@ public class LeaveRequestDto
 {
     public int EmployeeId { get; set; }
     
-    public string LeaveTypeId { get; set; }
+    public LeaveType LeaveType { get; set; }
     
     public DateOnly StartDate { get; set; }
     
