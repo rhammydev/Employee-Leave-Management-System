@@ -21,5 +21,13 @@ public class ApplicationDbContext : DbContext
             .WithMany(e => e.LeaveRequests)
             .HasForeignKey(lr => lr.EmployeeId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<LeaveRequest>()
+            .Property(lr => lr.LeaveType)
+            .HasConversion<string>();
+        
+        modelBuilder.Entity<LeaveRequest>()
+            .Property(lr => lr.Status)
+            .HasConversion<string>();
     }
 }

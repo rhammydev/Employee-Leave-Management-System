@@ -13,9 +13,25 @@ public class LeaveRepository: ILeaveRepository
         _dbContext = dbContext;
     }
     
-    public async Task<IEnumerable<LeaveRequest>> GetAllLeaveRequests()
+    public async Task<IEnumerable<LeaveRequestResponseDto>> GetAllLeaveRequests()
     {
-        return await _dbContext.LeaveRequests.ToListAsync();
+        var leaveRequests = await _dbContext.LeaveRequests
+            .Include(lr => lr.Employee)
+            .Select(lr => new LeaveRequestResponseDto
+            {
+                Id = lr.Id,
+                EmployeeName = lr.Employee.FullName,
+                Department = lr.Employee.Department,
+                LeaveType = lr.LeaveType,
+                StartDate = lr.StartDate,
+                EndDate = lr.EndDate,
+                Reason = lr.Reason,
+                Status = lr.Status,
+                DateCreated = lr.DateCreated
+            })
+            .ToListAsync();
+
+        return leaveRequests;
     }
 
     public async Task<LeaveRequest> GetLeaveRequestById(int id)
@@ -114,7 +130,7 @@ public class LeaveRepository: ILeaveRepository
         leaveExist.EndDate = leaveRequestDto.EndDate;
         leaveExist.Reason = leaveRequestDto.Reason;
         leaveExist.LeaveType = leaveRequestDto.LeaveType;
-        leaveExist.Status = leaveRequestDto.Status;
+     
         
         await _dbContext.SaveChangesAsync();
         return leaveExist;
@@ -135,5 +151,108 @@ public class LeaveRepository: ILeaveRepository
         _dbContext.LeaveRequests.Remove(leave);
         await _dbContext.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<LeaveRequest> ApproveLeaveRequest(int id)
+    {
+        var leave = await _dbContext.LeaveRequests.FirstOrDefaultAsync(lr => lr.Id == id);
+        if (leave == null)
+        {
+            throw new Exception("Leave Request Not Found");
+        }
+
+        if (leave.Status == LeaveStatus.Approved)
+        {
+            throw new InvalidOperationException("Approved leave requests cannot be approved.");
+        }
+
+        if (leave.Status == LeaveStatus.Rejected)
+        {
+            throw new InvalidOperationException("Rejected leave requests cannot be approved.");
+        }
+
+        leave.Status = LeaveStatus.Approved;
+        await _dbContext.SaveChangesAsync();
+        return leave;
+    }
+
+    public async Task<LeaveRequest> RejectLeaveRequest(int id)
+    {
+        var leave = await _dbContext.LeaveRequests.FirstOrDefaultAsync(lr => lr.Id == id);
+        if (leave == null)
+        {
+            throw new Exception("Leave Request Not Found");
+        }
+
+        if (leave.Status == LeaveStatus.Rejected)
+        {
+            throw new InvalidOperationException("Rejected leave requests cannot be rejected");
+        }
+
+        if (leave.Status == LeaveStatus.Approved)
+        {
+            throw new InvalidOperationException("Approved leave requests cannot be rejected");
+        }
+
+        leave.Status = LeaveStatus.Rejected;
+        await _dbContext.SaveChangesAsync();
+        return leave;
+    }
+
+    public async Task<LeaveStatisticsResponseDto> GetLeavesStatsByDepartment(string department)
+    {
+       var departmentExists = await _dbContext.Employees.AnyAsync(e => e.Department.ToLower() == department.ToLower());
+       if (!departmentExists)
+       {
+           throw new Exception($"No employee found in {department} deparment");
+       }
+
+       var stats = await _dbContext.LeaveRequests
+           .Include(lr => lr.Employee)
+           .Where(lr => lr.Employee.Department.ToLower() == department.ToLower())
+           .GroupBy(lr => lr.Employee.Department)
+           .Select(s => new LeaveStatisticsResponseDto
+           {
+               Department = s.Key,
+               TotalRequests = s.Count(),
+               Pending = s.Count(lr => lr.Status == LeaveStatus.Pending),
+               Approved = s.Count(lr => lr.Status == LeaveStatus.Approved),
+               Rejected = s.Count(lr => lr.Status == LeaveStatus.Rejected)
+           }).FirstOrDefaultAsync();
+       
+       return stats;
+    }
+
+    public async Task<IEnumerable<Employee>> GetEmployeesOnLeave()
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        
+        var employees = await _dbContext.Employees.Where(e => e.LeaveRequests.Any(lr => 
+            lr.Status == LeaveStatus.Approved && lr.StartDate <= today && lr.EndDate >= today)).ToListAsync();
+        
+        return employees;
+    }
+
+    public async Task<IEnumerable<LeaveRequestResponseDto>> GetLeaveByStatus(string status)
+    {
+        if (!Enum.TryParse<LeaveStatus>(status, ignoreCase: true, out var leaveStatus))
+            throw new Exception($"Invalid status '{status}'. Valid values are: Pending, Approved, Rejected.");
+
+        return await _dbContext.LeaveRequests
+            .Include(lr => lr.Employee)
+            .Where(lr => lr.Status == leaveStatus)
+            .Select(lr => new LeaveRequestResponseDto
+            {
+                Id = lr.Id,
+                EmployeeName = lr.Employee.FullName,
+                Department = lr.Employee.Department,
+                LeaveType = lr.LeaveType,
+                StartDate = lr.StartDate,
+                EndDate = lr.EndDate,
+                Reason = lr.Reason,
+                Status = lr.Status,
+                DateCreated = lr.DateCreated
+            })
+            .ToListAsync();
     }
 }

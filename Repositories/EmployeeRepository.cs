@@ -15,7 +15,7 @@ public class EmployeeRepository : IEmployeeRepository
     
     public async Task<IEnumerable<Employee>> GetAllEmployees()
     {
-        return await _dbContext.Employees.ToListAsync();
+        return await _dbContext.Employees.Include(e => e.LeaveRequests).ToListAsync();
     }
 
     public async Task<Employee> GetEmployeeById(int employeeId)
@@ -82,7 +82,16 @@ public class EmployeeRepository : IEmployeeRepository
 
     public async Task<IEnumerable<LeaveRequest>> GetEmployeeLeaveHistory(int id)
     {
-        var leaveHistory = await _dbContext.LeaveRequests.Where(lr => lr.Id == id).ToListAsync();
+        var employee = await _dbContext.Employees.FirstOrDefaultAsync(e => e.Id == id);
+        if (employee == null)
+        {
+            throw new Exception("Employee not found");
+        }
+        
+        var leaveHistory = await _dbContext.LeaveRequests
+            .Where(lr => lr.EmployeeId == id)
+            .ToListAsync();
+        
         if (leaveHistory.Count == 0)
         {
             throw new Exception($"No leave history found for employee: {id}");
