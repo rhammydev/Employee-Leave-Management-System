@@ -11,4 +11,6 @@ public class LeaveRequestResponseDto
     public string Reason { get; set; }
     public LeaveStatus Status { get; set; }
     public DateTime DateCreated { get; set; }
+    
+    public string? RejectionReason { get; set; }
 }

@@ -59,9 +59,9 @@ public class LeavesController : ControllerBase
     }
 
     [HttpPatch("{id}/reject")]
-    public async Task<IActionResult> RejectLeaveRequest(int id)
+    public async Task<IActionResult> RejectLeaveRequest(int id, LeaveRejectDto leaveRejectDto)
     {
-        var leaveRequest = await _repository.RejectLeaveRequest(id);
+        var leaveRequest = await _repository.RejectLeaveRequest(id, leaveRejectDto);
         return Ok(leaveRequest);
     }
 
@@ -72,7 +72,7 @@ public class LeavesController : ControllerBase
         return Ok(leaves);
     }
 
-    [HttpGet("active-employees")]
+    [HttpGet("employees-on-leave")]
     public async Task<IActionResult> GetEmployeesOnLeave()
     {
         var leaves = await _repository.GetEmployeesOnLeave();

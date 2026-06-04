@@ -16,7 +16,9 @@ public class LeaveRequest
     
     public LeaveStatus  Status { get; set; }
     
-    public DateTime DateCreated { get; set; }
+    public DateTime DateCreated { get; set; } = DateTime.UtcNow;
     
     public Employee Employee { get; set; }
+    
+    public string? RejectionReason { get; set; } 
 }

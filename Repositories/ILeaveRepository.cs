@@ -17,11 +17,11 @@ public interface ILeaveRepository
     
     public Task<LeaveRequest> ApproveLeaveRequest(int id);
     
-    public Task<LeaveRequest> RejectLeaveRequest(int id);
+    public Task<LeaveRequest> RejectLeaveRequest(int id, LeaveRejectDto leaveRejectDto);
     
     public Task<LeaveStatisticsResponseDto> GetLeavesStatsByDepartment(string department);
 
-    public Task<IEnumerable<Employee>> GetEmployeesOnLeave();
+    public Task<IEnumerable<EmployeeOnLeaveResponseDto>> GetEmployeesOnLeave();
     
     public Task<IEnumerable<LeaveRequestResponseDto>> GetLeaveByStatus(string status);
 }
