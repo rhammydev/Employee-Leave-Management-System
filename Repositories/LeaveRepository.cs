@@ -32,6 +32,11 @@ public class LeaveRepository: ILeaveRepository
             })
             .ToListAsync();
 
+        if (leaveRequests.Count == 0)
+        {
+            throw new Exception("Leave Request Not Found");
+        }
+
         return leaveRequests;
     }
 
@@ -69,7 +74,7 @@ public class LeaveRepository: ILeaveRepository
             );
 
         if (hasOverlap)
-            throw new InvalidOperationException("Employee already has a leave request overlapping this period.");
+            throw new Exception("Employee already has a leave request overlapping this period.");
 
         var leaveRequest = new LeaveRequest()
         {
@@ -103,7 +108,7 @@ public class LeaveRepository: ILeaveRepository
         }
         
         if (leaveExist.Status != LeaveStatus.Pending)
-            throw new InvalidOperationException("Only pending leave requests can be updated.");
+            throw new Exception("Only pending leave requests can be updated.");
         
         if(leaveRequestDto.StartDate > leaveRequestDto.EndDate)
         {
@@ -123,7 +128,7 @@ public class LeaveRepository: ILeaveRepository
             );
 
         if (hasOverlap)
-            throw new InvalidOperationException("Employee already has a leave request overlapping this period.");
+            throw new Exception("Employee already has a leave request overlapping this period.");
         
         leaveExist.EmployeeId = leaveRequestDto.EmployeeId;
         leaveExist.StartDate = leaveRequestDto.StartDate;
@@ -163,12 +168,12 @@ public class LeaveRepository: ILeaveRepository
 
         if (leave.Status == LeaveStatus.Approved)
         {
-            throw new InvalidOperationException("Approved leave requests cannot be approved.");
+            throw new Exception("Approved leave requests cannot be approved.");
         }
 
         if (leave.Status == LeaveStatus.Rejected)
         {
-            throw new InvalidOperationException("Rejected leave requests cannot be approved.");
+            throw new Exception("Rejected leave requests cannot be approved.");
         }
 
         leave.Status = LeaveStatus.Approved;
@@ -186,12 +191,12 @@ public class LeaveRepository: ILeaveRepository
 
         if (leave.Status == LeaveStatus.Rejected)
         {
-            throw new InvalidOperationException("Rejected leave requests cannot be rejected");
+            throw new Exception("Rejected leave requests cannot be rejected");
         }
 
         if (leave.Status == LeaveStatus.Approved)
         {
-            throw new InvalidOperationException("Approved leave requests cannot be rejected");
+            throw new Exception("Approved leave requests cannot be rejected");
         }
 
         if (leaveRejectDto.RejectionReason == string.Empty || leaveRejectDto.RejectionReason.Length < 5)

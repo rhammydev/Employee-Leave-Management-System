@@ -13,14 +13,14 @@ public class ApplicationDbContext : DbContext
     public DbSet<Employee> Employees { get; set; }
     public DbSet<LeaveRequest> LeaveRequests { get; set; }
 
-    // ERD
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<LeaveRequest>()
             .HasOne(lr => lr.Employee)
             .WithMany(e => e.LeaveRequests)
             .HasForeignKey(lr => lr.EmployeeId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<LeaveRequest>()
             .Property(lr => lr.LeaveType)

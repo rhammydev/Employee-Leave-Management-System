@@ -15,7 +15,12 @@ public class EmployeeRepository : IEmployeeRepository
     
     public async Task<IEnumerable<Employee>> GetAllEmployees()
     {
-        return await _dbContext.Employees.Include(e => e.LeaveRequests).ToListAsync();
+        var employees = await _dbContext.Employees.Include(e => e.LeaveRequests).ToListAsync();
+        if (employees.Count == 0)
+        {
+            throw new Exception("Employee not found");
+        }
+        return employees;
     }
 
     public async Task<Employee> GetEmployeeById(int employeeId)
