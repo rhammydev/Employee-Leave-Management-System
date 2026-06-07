@@ -48,14 +48,12 @@ public class LeaveRepository: ILeaveRepository
 
     public async Task<LeaveRequest> SubmitLeaveRequest(LeaveRequestDto leaveRequestDto)
     {
-        // employee must exist
         var employeeExist = await _dbContext.Employees.AnyAsync(e => e.Id == leaveRequestDto.EmployeeId);
         if (!employeeExist)
         {
             throw new Exception("Employee not found");
         }
         
-        // start date can't be later than end date
         if(leaveRequestDto.StartDate > leaveRequestDto.EndDate)
         {
             throw new Exception("Start Date cannot be later than End Date.");
@@ -63,12 +61,11 @@ public class LeaveRepository: ILeaveRepository
         
         if (leaveRequestDto.StartDate < DateOnly.FromDateTime(DateTime.UtcNow))
             throw new Exception("Start Date cannot be in the past.");
-        
-        // Check for overlapping requests for the same employee
+       
         bool hasOverlap = await _dbContext.LeaveRequests
             .AnyAsync(lr =>
                 lr.EmployeeId == leaveRequestDto.EmployeeId &&
-                lr.Status != LeaveStatus.Rejected &&   // ignore rejected ones
+                lr.Status != LeaveStatus.Rejected &&   
                 lr.StartDate <= leaveRequestDto.EndDate &&
                 lr.EndDate >= leaveRequestDto.StartDate
             );
@@ -120,7 +117,7 @@ public class LeaveRepository: ILeaveRepository
         
         bool hasOverlap = await _dbContext.LeaveRequests
             .AnyAsync(lr =>
-                lr.Id != id &&   // exclude the current request being updated
+                lr.Id != id &&  
                 lr.EmployeeId == leaveRequestDto.EmployeeId &&
                 lr.Status != LeaveStatus.Rejected &&
                 lr.StartDate <= leaveRequestDto.EndDate &&
