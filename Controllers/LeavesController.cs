@@ -51,21 +51,21 @@ public class LeavesController : ControllerBase
         return Ok(leaveRequest);
     }
 
-    [HttpPatch("{id}/approve")]
+    [HttpPatch("approve/{id}")]
     public async Task<IActionResult> ApproveLeaveRequest(int id)
     {
         var leaveRequest = await _repository.ApproveLeaveRequest(id);
         return Ok(leaveRequest);
     }
 
-    [HttpPatch("{id}/reject")]
+    [HttpPatch("reject/{id}")]
     public async Task<IActionResult> RejectLeaveRequest(int id, LeaveRejectDto leaveRejectDto)
     {
         var leaveRequest = await _repository.RejectLeaveRequest(id, leaveRejectDto);
         return Ok(leaveRequest);
     }
 
-    [HttpGet("{department}/department")]
+    [HttpGet("department/{department}")]
     public async Task<IActionResult> GetDepartmentByDepartment(string department)
     {
         var leaves = await _repository.GetLeavesStatsByDepartment(department);
