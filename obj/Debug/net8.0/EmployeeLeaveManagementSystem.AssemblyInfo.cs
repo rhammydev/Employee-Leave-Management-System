@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("EmployeeLeaveManagementSystem")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8a3e2fbed749acc23392c034926cc638fb966b9b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a21e97eca2b4db330f3fe22660daee93861b627c")]
 [assembly: System.Reflection.AssemblyProductAttribute("EmployeeLeaveManagementSystem")]
 [assembly: System.Reflection.AssemblyTitleAttribute("EmployeeLeaveManagementSystem")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
