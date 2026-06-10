@@ -7,21 +7,19 @@ public interface ILeaveRepository
 {
     public Task<IEnumerable<LeaveRequestResponseDto>> GetAllLeaveRequests();
     
-    public Task<LeaveRequest> GetLeaveRequestById(int id);
+    public Task<LeaveRequestResponseDto> GetLeaveRequestById(int id);
     
-    public Task<LeaveRequest> SubmitLeaveRequest(LeaveRequestDto leaveRequestDto);
+    public Task<Leave> SubmitLeaveRequest(SubmitLeaveRequestDto submitLeaveRequestDto);
     
-    public Task<LeaveRequest> UpdateLeaveRequest(int id, LeaveRequestDto leaveRequestDto);
+    public Task<Leave> UpdateLeaveRequest(int id, SubmitLeaveRequestDto submitLeaveRequestDto);
     
     public Task<bool> DeleteLeaveRequest(int id);
     
-    public Task<LeaveRequest> ApproveLeaveRequest(int id);
+    public Task<Leave> ApproveLeaveRequest(int id, LeaveActionRequestDto leaveActionRequestDto);
     
-    public Task<LeaveRequest> RejectLeaveRequest(int id, LeaveRejectDto leaveRejectDto);
+    public Task<Leave> RejectLeaveRequest(int id, LeaveActionRequestDto leaveActionRequestDto);
     
     public Task<LeaveStatisticsResponseDto> GetLeavesStatsByDepartment(string department);
-
-    public Task<IEnumerable<EmployeeOnLeaveResponseDto>> GetEmployeesOnLeave();
     
     public Task<IEnumerable<LeaveRequestResponseDto>> GetLeaveByStatus(string status);
 }

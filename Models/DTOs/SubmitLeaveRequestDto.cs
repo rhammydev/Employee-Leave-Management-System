@@ -1,10 +1,10 @@
 namespace EmployeeLeaveManagementSystem.Models.DTOs;
 
-public class LeaveRequestDto
+public class SubmitLeaveRequestDto
 {
     public int EmployeeId { get; set; }
     
-    public LeaveType LeaveType { get; set; }
+    public string LeaveType { get; set; }
     
     public DateOnly StartDate { get; set; }
     

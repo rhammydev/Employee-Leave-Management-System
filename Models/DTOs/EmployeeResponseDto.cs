@@ -1,8 +1,6 @@
-using EmployeeLeaveManagementSystem.Models.DTOs;
+namespace EmployeeLeaveManagementSystem.Models.DTOs;
 
-namespace EmployeeLeaveManagementSystem.Models;
-
-public class Employee
+public class EmployeeResponseDto
 {
     public int Id { get; set; }
     

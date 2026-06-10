@@ -30,16 +30,16 @@ public class EmployeesController: ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateEmployee(CreateEmployeeDto createEmployeeDto)
+    public async Task<IActionResult> CreateEmployee(CreateEmployeeRequestDto createEmployeeRequestDto)
     {
-        var employee = await  _repository.CreateEmployee(createEmployeeDto);
+        var employee = await  _repository.CreateEmployee(createEmployeeRequestDto);
         return Ok(employee);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateEmployee(int id, CreateEmployeeDto createEmployeeDto)
+    public async Task<IActionResult> UpdateEmployee(int id, CreateEmployeeRequestDto createEmployeeRequestDto)
     {
-        var employee = await _repository.UpdateEmployee(id, createEmployeeDto);
+        var employee = await _repository.UpdateEmployee(id, createEmployeeRequestDto);
         return Ok(employee);
     }
 
@@ -48,6 +48,13 @@ public class EmployeesController: ControllerBase
     {
         var employee = await _repository.DeleteEmployee(id);
         return Ok(employee);
+    }
+    
+    [HttpGet("on-leave")]
+    public async Task<IActionResult> GetEmployeesOnLeave()
+    {
+        var leaves = await _repository.GetEmployeesOnLeave();
+        return Ok(leaves);
     }
 
     [HttpGet("{id}/leaves")]

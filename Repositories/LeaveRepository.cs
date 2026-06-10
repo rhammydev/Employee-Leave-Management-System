@@ -1,3 +1,4 @@
+using EmployeeLeaveManagementSystem.Constants;
 using EmployeeLeaveManagementSystem.Data;
 using EmployeeLeaveManagementSystem.Models;
 using EmployeeLeaveManagementSystem.Models.DTOs;
@@ -40,47 +41,63 @@ public class LeaveRepository: ILeaveRepository
         return leaveRequests;
     }
 
-    public async Task<LeaveRequest> GetLeaveRequestById(int id)
+    public async Task<LeaveRequestResponseDto> GetLeaveRequestById(int id)
     {
-        var leaveRequest = await _dbContext.LeaveRequests.FirstOrDefaultAsync(x => x.Id == id);
+        var leaveRequest = await _dbContext.LeaveRequests
+            .Include(lr => lr.Employee)
+            .Select(lr => new LeaveRequestResponseDto
+            {
+                Id = lr.Id,
+                EmployeeName = lr.Employee.FullName,
+                Department = lr.Employee.Department,
+                LeaveType = lr.LeaveType,
+                StartDate = lr.StartDate,
+                EndDate = lr.EndDate,
+                Reason = lr.Reason,
+                Status = lr.Status,
+                DateCreated = lr.DateCreated,
+                RejectionReason = lr.RejectionReason,
+            })
+            .FirstOrDefaultAsync(x => x.Id == id);
+
         return leaveRequest ?? throw new Exception("Leave Request Not Found");
     }
 
-    public async Task<LeaveRequest> SubmitLeaveRequest(LeaveRequestDto leaveRequestDto)
+    public async Task<Leave> SubmitLeaveRequest(SubmitLeaveRequestDto submitLeaveRequestDto)
     {
-        var employeeExist = await _dbContext.Employees.AnyAsync(e => e.Id == leaveRequestDto.EmployeeId);
+        var employeeExist = await _dbContext.Employees.AnyAsync(e => e.Id == submitLeaveRequestDto.EmployeeId);
         if (!employeeExist)
         {
             throw new Exception("Employee not found");
         }
         
-        if(leaveRequestDto.StartDate > leaveRequestDto.EndDate)
+        if(submitLeaveRequestDto.StartDate > submitLeaveRequestDto.EndDate)
         {
             throw new Exception("Start Date cannot be later than End Date.");
         }
         
-        if (leaveRequestDto.StartDate < DateOnly.FromDateTime(DateTime.UtcNow))
+        if (submitLeaveRequestDto.StartDate < DateOnly.FromDateTime(DateTime.UtcNow))
             throw new Exception("Start Date cannot be in the past.");
        
         bool hasOverlap = await _dbContext.LeaveRequests
             .AnyAsync(lr =>
-                lr.EmployeeId == leaveRequestDto.EmployeeId &&
-                lr.Status != LeaveStatus.Rejected &&   
-                lr.StartDate <= leaveRequestDto.EndDate &&
-                lr.EndDate >= leaveRequestDto.StartDate
+                lr.EmployeeId == submitLeaveRequestDto.EmployeeId &&
+                lr.Status != LeaveConstants.Rejected &&   
+                lr.StartDate <= submitLeaveRequestDto.EndDate &&
+                lr.EndDate >= submitLeaveRequestDto.StartDate
             );
 
         if (hasOverlap)
             throw new Exception("Employee already has a leave request overlapping this period.");
 
-        var leaveRequest = new LeaveRequest()
+        var leaveRequest = new Leave()
         {
-            EmployeeId = leaveRequestDto.EmployeeId,
-            StartDate = leaveRequestDto.StartDate,
-            EndDate = leaveRequestDto.EndDate,
-            LeaveType = leaveRequestDto.LeaveType,
-            Reason = leaveRequestDto.Reason,
-            Status = LeaveStatus.Pending
+            EmployeeId = submitLeaveRequestDto.EmployeeId,
+            StartDate = submitLeaveRequestDto.StartDate,
+            EndDate = submitLeaveRequestDto.EndDate,
+            LeaveType = submitLeaveRequestDto.LeaveType,
+            Reason = submitLeaveRequestDto.Reason,
+            Status = LeaveConstants.Pending
         };
         
         await _dbContext.LeaveRequests.AddAsync(leaveRequest);
@@ -90,7 +107,7 @@ public class LeaveRepository: ILeaveRepository
 
     }
 
-    public async Task<LeaveRequest> UpdateLeaveRequest(int id, LeaveRequestDto leaveRequestDto)
+    public async Task<Leave> UpdateLeaveRequest(int id, SubmitLeaveRequestDto submitLeaveRequestDto)
     {
         var leaveExist = await _dbContext.LeaveRequests.FirstOrDefaultAsync(lr => lr.Id == id);
         if (leaveExist  == null)
@@ -98,40 +115,40 @@ public class LeaveRepository: ILeaveRepository
             throw new Exception("Leave Request Not Found");
         }
         
-        var employeeExist = await _dbContext.Employees.AnyAsync(e => e.Id == leaveRequestDto.EmployeeId);
+        var employeeExist = await _dbContext.Employees.AnyAsync(e => e.Id == submitLeaveRequestDto.EmployeeId);
         if (!employeeExist)
         {
             throw new Exception("Employee not found");
         }
         
-        if (leaveExist.Status != LeaveStatus.Pending)
+        if (leaveExist.Status != LeaveConstants.Pending)
             throw new Exception("Only pending leave requests can be updated.");
         
-        if(leaveRequestDto.StartDate > leaveRequestDto.EndDate)
+        if(submitLeaveRequestDto.StartDate > submitLeaveRequestDto.EndDate)
         {
             throw new Exception("Start Date cannot be later than End Date.");
         }
         
-        if (leaveRequestDto.StartDate < DateOnly.FromDateTime(DateTime.UtcNow))
+        if (submitLeaveRequestDto.StartDate < DateOnly.FromDateTime(DateTime.UtcNow))
             throw new Exception("Start Date cannot be in the past.");
         
         bool hasOverlap = await _dbContext.LeaveRequests
             .AnyAsync(lr =>
                 lr.Id != id &&  
-                lr.EmployeeId == leaveRequestDto.EmployeeId &&
-                lr.Status != LeaveStatus.Rejected &&
-                lr.StartDate <= leaveRequestDto.EndDate &&
-                lr.EndDate >= leaveRequestDto.StartDate
+                lr.EmployeeId == submitLeaveRequestDto.EmployeeId &&
+                lr.Status != LeaveConstants.Rejected &&
+                lr.StartDate <= submitLeaveRequestDto.EndDate &&
+                lr.EndDate >= submitLeaveRequestDto.StartDate
             );
 
         if (hasOverlap)
             throw new Exception("Employee already has a leave request overlapping this period.");
         
-        leaveExist.EmployeeId = leaveRequestDto.EmployeeId;
-        leaveExist.StartDate = leaveRequestDto.StartDate;
-        leaveExist.EndDate = leaveRequestDto.EndDate;
-        leaveExist.Reason = leaveRequestDto.Reason;
-        leaveExist.LeaveType = leaveRequestDto.LeaveType;
+        leaveExist.EmployeeId = submitLeaveRequestDto.EmployeeId;
+        leaveExist.StartDate = submitLeaveRequestDto.StartDate;
+        leaveExist.EndDate = submitLeaveRequestDto.EndDate;
+        leaveExist.Reason = submitLeaveRequestDto.Reason;
+        leaveExist.LeaveType = submitLeaveRequestDto.LeaveType;
      
         
         await _dbContext.SaveChangesAsync();
@@ -147,7 +164,7 @@ public class LeaveRepository: ILeaveRepository
             throw new Exception("Leave Request Not Found");
         }
         
-        if (leave.Status == LeaveStatus.Approved)
+        if (leave.Status == LeaveConstants.Approved)
             throw new InvalidOperationException("Approved leave requests cannot be deleted.");
         
         _dbContext.LeaveRequests.Remove(leave);
@@ -155,7 +172,7 @@ public class LeaveRepository: ILeaveRepository
         return true;
     }
 
-    public async Task<LeaveRequest> ApproveLeaveRequest(int id)
+    public async Task<Leave> ApproveLeaveRequest(int id, LeaveActionRequestDto leaveActionRequestDto)
     {
         var leave = await _dbContext.LeaveRequests.FirstOrDefaultAsync(lr => lr.Id == id);
         if (leave == null)
@@ -163,22 +180,35 @@ public class LeaveRepository: ILeaveRepository
             throw new Exception("Leave Request Not Found");
         }
 
-        if (leave.Status == LeaveStatus.Approved)
+        if (leave.Status == LeaveConstants.Approved)
         {
             throw new Exception("Approved leave requests cannot be approved.");
         }
 
-        if (leave.Status == LeaveStatus.Rejected)
+        if (leave.Status == LeaveConstants.Rejected)
         {
             throw new Exception("Rejected leave requests cannot be approved.");
         }
 
-        leave.Status = LeaveStatus.Approved;
+        if (leaveActionRequestDto.ApproverId == leave.EmployeeId)
+        {
+            throw new Exception("You are not allowed to approve your own request.");
+        }
+
+        var leaveApproval = new LeaveApproval()
+        {
+            LeaveRequestId = leave.Id,
+            ApproverId = leaveActionRequestDto.ApproverId,
+            Action = leave.Approvals.Count == 1 ?  LeaveConstants.Processing : LeaveConstants.Approved,
+            Reason = leaveActionRequestDto.Reason,
+        };
+        
+        await _dbContext.LeaveApprovals.AddAsync(leaveApproval);
         await _dbContext.SaveChangesAsync();
         return leave;
     }
 
-    public async Task<LeaveRequest> RejectLeaveRequest(int id, LeaveRejectDto leaveRejectDto)
+    public async Task<Leave> RejectLeaveRequest(int id, LeaveActionRequestDto leaveActionRequestDto)
     {
         var leave = await _dbContext.LeaveRequests.FirstOrDefaultAsync(lr => lr.Id == id);
         if (leave == null)
@@ -186,23 +216,30 @@ public class LeaveRepository: ILeaveRepository
             throw new Exception("Leave Request Not Found");
         }
 
-        if (leave.Status == LeaveStatus.Rejected)
+        if (leave.Status == LeaveConstants.Rejected)
         {
             throw new Exception("Rejected leave requests cannot be rejected");
         }
 
-        if (leave.Status == LeaveStatus.Approved)
+        if (leave.Status == LeaveConstants.Approved)
         {
             throw new Exception("Approved leave requests cannot be rejected");
         }
 
-        if (leaveRejectDto.RejectionReason == string.Empty || leaveRejectDto.RejectionReason.Length < 5)
+        if (leaveActionRequestDto.Reason == string.Empty || leaveActionRequestDto.Reason.Length < 5)
         {
             throw new Exception("Please provide a meaningful rejection reason");
         }
 
-        leave.RejectionReason = leaveRejectDto.RejectionReason;
-        leave.Status = LeaveStatus.Rejected;
+        var leaveApproval = new LeaveApproval()
+        {
+            LeaveRequestId = leave.Id,
+            ApproverId = leaveActionRequestDto.ApproverId,
+            Action = LeaveConstants.Rejected,
+            Reason = leaveActionRequestDto.Reason,
+        };
+        
+        await _dbContext.LeaveApprovals.AddAsync(leaveApproval);
         await _dbContext.SaveChangesAsync();
         return leave;
     }
@@ -223,63 +260,40 @@ public class LeaveRepository: ILeaveRepository
            {
                Department = s.Key,
                TotalRequests = s.Count(),
-               Pending = s.Count(lr => lr.Status == LeaveStatus.Pending),
-               Approved = s.Count(lr => lr.Status == LeaveStatus.Approved),
-               Rejected = s.Count(lr => lr.Status == LeaveStatus.Rejected)
+               Pending = s.Count(lr => lr.Status == LeaveConstants.Pending),
+               Processing = s.Count(lr => lr.Status == LeaveConstants.Processing),
+               Approved = s.Count(lr => lr.Status == LeaveConstants.Approved),
+               Rejected = s.Count(lr => lr.Status == LeaveConstants.Rejected)
            }).FirstOrDefaultAsync();
        
        return stats;
     }
-
-    public async Task<IEnumerable<EmployeeOnLeaveResponseDto>> GetEmployeesOnLeave()
-    {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        
-        var employees = await _dbContext.Employees
-            .Include(e => e.LeaveRequests)
-            .Where(e => e.LeaveRequests.Any(lr => 
-            lr.Status == LeaveStatus.Approved && 
-            lr.StartDate <= today && 
-            lr.EndDate >= today))
-            .SelectMany(e => e.LeaveRequests
-                .Where(lr => lr.Status == LeaveStatus.Approved && 
-                         lr.StartDate <= today && 
-                         lr.EndDate >= today)
-                .Select(lr => new EmployeeOnLeaveResponseDto
-                {
-                Id = e.Id,
-                EmployeeName = e.FullName,
-                Department = e.Department,
-                StartDate = lr.StartDate,
-                EndDate = lr.EndDate,
-                LeaveType =  lr.LeaveType
-                }))
-            .ToListAsync();
-        
-        return employees;
-    }
-
+    
     public async Task<IEnumerable<LeaveRequestResponseDto>> GetLeaveByStatus(string status)
     {
-        if (!Enum.TryParse<LeaveStatus>(status, ignoreCase: true, out var leaveStatus))
-            throw new Exception($"Invalid status '{status}'. Valid values are: Pending, Approved, Rejected.");
+       if (!LeaveConstants.ValidStatus.Contains(status.ToUpper()))
+         {
+             throw new Exception($"Action must be one of {string.Join(", ", LeaveConstants.JoinedStatus)}");
+         }
+       
+       return await _dbContext.LeaveRequests
+           .Include(lr => lr.Employee)
+           .Where(lr => lr.Status == status)
+           .Select(lr => new LeaveRequestResponseDto
+           {
+               Id = lr.Id,
+               EmployeeName = lr.Employee.FullName,
+               Department = lr.Employee.Department,
+               LeaveType = lr.LeaveType,
+               StartDate = lr.StartDate,
+               EndDate = lr.EndDate,
+               Reason = lr.Reason,
+               Status = lr.Status,
+               DateCreated = lr.DateCreated,
+               RejectionReason = lr.RejectionReason,
+           })
+           .ToListAsync();
 
-        return await _dbContext.LeaveRequests
-            .Include(lr => lr.Employee)
-            .Where(lr => lr.Status == leaveStatus)
-            .Select(lr => new LeaveRequestResponseDto
-            {
-                Id = lr.Id,
-                EmployeeName = lr.Employee.FullName,
-                Department = lr.Employee.Department,
-                LeaveType = lr.LeaveType,
-                StartDate = lr.StartDate,
-                EndDate = lr.EndDate,
-                Reason = lr.Reason,
-                Status = lr.Status,
-                DateCreated = lr.DateCreated,
-                RejectionReason = lr.RejectionReason,
-            })
-            .ToListAsync();
-    }
+
+    } 
 }

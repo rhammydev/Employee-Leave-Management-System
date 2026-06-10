@@ -1,6 +1,6 @@
 namespace EmployeeLeaveManagementSystem.Models.DTOs;
 
-public class CreateEmployeeDto
+public class CreateEmployeeRequestDto
 {
     public string FullName { get; set; }
     

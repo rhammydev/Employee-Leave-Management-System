@@ -31,16 +31,16 @@ public class LeavesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> SubmitLeaveRequest(LeaveRequestDto leaveRequestDto)
+    public async Task<IActionResult> SubmitLeaveRequest(SubmitLeaveRequestDto submitLeaveRequestDto)
     {
-        var leaveRequest = await _repository.SubmitLeaveRequest(leaveRequestDto);
+        var leaveRequest = await _repository.SubmitLeaveRequest(submitLeaveRequestDto);
         return Ok(leaveRequest);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateLeaveRequest(int id, LeaveRequestDto leaveRequestDto)
+    public async Task<IActionResult> UpdateLeaveRequest(int id, SubmitLeaveRequestDto submitLeaveRequestDto)
     {
-        var leaveRequest = await _repository.UpdateLeaveRequest(id, leaveRequestDto);
+        var leaveRequest = await _repository.UpdateLeaveRequest(id, submitLeaveRequestDto);
         return Ok(leaveRequest);
     }
 
@@ -51,35 +51,30 @@ public class LeavesController : ControllerBase
         return Ok(leaveRequest);
     }
 
-    [HttpPatch("approve/{id}")]
-    public async Task<IActionResult> ApproveLeaveRequest(int id)
+    [HttpPost("approve/{id}")]
+    public async Task<IActionResult> ApproveLeaveRequest(int id, LeaveActionRequestDto leaveActionRequestDto)
     {
-        var leaveRequest = await _repository.ApproveLeaveRequest(id);
+        var leaveRequest = await _repository.ApproveLeaveRequest(id, leaveActionRequestDto);
         return Ok(leaveRequest);
     }
 
-    [HttpPatch("reject/{id}")]
-    public async Task<IActionResult> RejectLeaveRequest(int id, LeaveRejectDto leaveRejectDto)
+    [HttpPost("reject/{id}")]
+    public async Task<IActionResult> RejectLeaveRequest(int id, LeaveActionRequestDto  leaveActionRequestDto)
     {
-        var leaveRequest = await _repository.RejectLeaveRequest(id, leaveRejectDto);
+        var leaveRequest = await _repository.RejectLeaveRequest(id, leaveActionRequestDto);
         return Ok(leaveRequest);
     }
 
-    [HttpGet("department/{department}")]
-    public async Task<IActionResult> GetDepartmentByDepartment(string department)
+    [HttpGet("statistics")]
+    public async Task<IActionResult> GetLeavesStatsByDepartment(string department)
     {
         var leaves = await _repository.GetLeavesStatsByDepartment(department);
         return Ok(leaves);
     }
 
-    [HttpGet("employees-on-leave")]
-    public async Task<IActionResult> GetEmployeesOnLeave()
-    {
-        var leaves = await _repository.GetEmployeesOnLeave();
-        return Ok(leaves);
-    }
+   
 
-    [HttpGet("status")]
+    [HttpGet("status/ {status}")]
     public async Task<IActionResult> GetLeaveByStatus(string status)
     {
         var leaves = await _repository.GetLeaveByStatus(status);
