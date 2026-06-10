@@ -15,9 +15,9 @@ public interface ILeaveRepository
     
     public Task<bool> DeleteLeaveRequest(int id);
     
-    public Task<Leave> ApproveLeaveRequest(int id, LeaveActionRequestDto leaveActionRequestDto);
+    public Task<LeaveRequestResponseDto> ApproveLeaveRequest(int id, ApproveLeaveRequestDto approveLeaveRequestDto);
     
-    public Task<Leave> RejectLeaveRequest(int id, LeaveActionRequestDto leaveActionRequestDto);
+    public Task<LeaveRequestResponseDto> RejectLeaveRequest(int id, RejectLeaveRequestDto rejectLeaveRequestDto);
     
     public Task<LeaveStatisticsResponseDto> GetLeavesStatsByDepartment(string department);
     

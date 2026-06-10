@@ -18,6 +18,7 @@ public class LeaveRepository: ILeaveRepository
     {
         var leaveRequests = await _dbContext.LeaveRequests
             .Include(lr => lr.Employee)
+            .Include(lr => lr.Approvals)
             .Select(lr => new LeaveRequestResponseDto
             {
                 Id = lr.Id,
@@ -45,6 +46,7 @@ public class LeaveRepository: ILeaveRepository
     {
         var leaveRequest = await _dbContext.LeaveRequests
             .Include(lr => lr.Employee)
+            .Include(lr => lr.Approvals)
             .Select(lr => new LeaveRequestResponseDto
             {
                 Id = lr.Id,
@@ -172,9 +174,14 @@ public class LeaveRepository: ILeaveRepository
         return true;
     }
 
-    public async Task<Leave> ApproveLeaveRequest(int id, LeaveActionRequestDto leaveActionRequestDto)
+    public async Task<LeaveRequestResponseDto> ApproveLeaveRequest(int id, ApproveLeaveRequestDto approveLeaveRequestDto)
     {
-        var leave = await _dbContext.LeaveRequests.FirstOrDefaultAsync(lr => lr.Id == id);
+        var leave = await _dbContext.LeaveRequests
+            .Include(lr => lr.Employee)
+            .Include(lr => lr.Approvals)
+            .FirstOrDefaultAsync(lr => lr.Id == id);
+        
+        
         if (leave == null)
         {
             throw new Exception("Leave Request Not Found");
@@ -190,27 +197,56 @@ public class LeaveRepository: ILeaveRepository
             throw new Exception("Rejected leave requests cannot be approved.");
         }
 
-        if (leaveActionRequestDto.ApproverId == leave.EmployeeId)
+        if (approveLeaveRequestDto.ApproverId == leave.EmployeeId)
         {
             throw new Exception("You are not allowed to approve your own request.");
+        }
+        
+        var alreadyActed = leave.Approvals.Any(a 
+            => a.ApproverId == approveLeaveRequestDto.ApproverId);
+        
+        if (alreadyActed)
+        {
+            throw new Exception(
+                "You have already taken an action on this leave request.");
+        }
+        
+        var approvalCount =
+            leave.Approvals.Count(a => a.Action == LeaveConstants.Approved);
+
+        if (approvalCount == 0)
+        {
+            leave.Status = LeaveConstants.Processing;
+        }
+        else if (approvalCount == 1)
+        {
+            leave.Status = LeaveConstants.Approved;
         }
 
         var leaveApproval = new LeaveApproval()
         {
             LeaveRequestId = leave.Id,
-            ApproverId = leaveActionRequestDto.ApproverId,
-            Action = leave.Approvals.Count == 1 ?  LeaveConstants.Processing : LeaveConstants.Approved,
-            Reason = leaveActionRequestDto.Reason,
+            ApproverId = approveLeaveRequestDto.ApproverId,
+            Action = LeaveConstants.Approved,
+            Reason = approveLeaveRequestDto.Reason,
+            DateActed = DateTime.UtcNow
         };
         
+        
+        
         await _dbContext.LeaveApprovals.AddAsync(leaveApproval);
+        leave.Approvals.Add(leaveApproval);
         await _dbContext.SaveChangesAsync();
-        return leave;
+        return await GetLeaveRequestById(id);
     }
 
-    public async Task<Leave> RejectLeaveRequest(int id, LeaveActionRequestDto leaveActionRequestDto)
+    public async Task<LeaveRequestResponseDto> RejectLeaveRequest(int id, RejectLeaveRequestDto rejectLeaveRequestDto)
     {
-        var leave = await _dbContext.LeaveRequests.FirstOrDefaultAsync(lr => lr.Id == id);
+        var leave = await _dbContext.LeaveRequests
+            .Include(lr => lr.Employee)
+            .Include(lr => lr.Approvals)
+            .FirstOrDefaultAsync(lr => lr.Id == id);
+        
         if (leave == null)
         {
             throw new Exception("Leave Request Not Found");
@@ -226,22 +262,35 @@ public class LeaveRepository: ILeaveRepository
             throw new Exception("Approved leave requests cannot be rejected");
         }
 
-        if (leaveActionRequestDto.Reason == string.Empty || leaveActionRequestDto.Reason.Length < 5)
+        if (rejectLeaveRequestDto.ApproverId == leave.EmployeeId)
         {
-            throw new Exception("Please provide a meaningful rejection reason");
+            throw new Exception("You are not allowed to reject your own request.");
         }
+        
+        var alreadyActed = leave.Approvals.Any(a 
+            => a.ApproverId == rejectLeaveRequestDto.ApproverId);
+        
+        if (alreadyActed)
+        {
+            throw new Exception(
+                "You have already taken an action on this leave request.");
+        }
+        
+        leave.Status = LeaveConstants.Rejected;
+        leave.RejectionReason = rejectLeaveRequestDto.Reason;
 
         var leaveApproval = new LeaveApproval()
         {
             LeaveRequestId = leave.Id,
-            ApproverId = leaveActionRequestDto.ApproverId,
+            ApproverId = rejectLeaveRequestDto.ApproverId,
             Action = LeaveConstants.Rejected,
-            Reason = leaveActionRequestDto.Reason,
+            Reason = rejectLeaveRequestDto.Reason,
+            DateActed = DateTime.UtcNow
         };
         
         await _dbContext.LeaveApprovals.AddAsync(leaveApproval);
         await _dbContext.SaveChangesAsync();
-        return leave;
+        return await GetLeaveRequestById(id);
     }
 
     public async Task<LeaveStatisticsResponseDto> GetLeavesStatsByDepartment(string department)
