@@ -4,9 +4,9 @@ using FluentValidation;
 
 namespace EmployeeLeaveManagementSystem.Validators;
 
-public class ApproveLeaveRequestValidation : AbstractValidator<ApproveLeaveRequestDto>
+public class ApproveLeaveRequestValidator : AbstractValidator<LeaveActionRequestDto>
 {
-    public ApproveLeaveRequestValidation()
+    public ApproveLeaveRequestValidator()
     {
         RuleFor(l => l.ApproverId)
             .NotEmpty()
