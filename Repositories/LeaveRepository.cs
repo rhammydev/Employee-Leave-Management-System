@@ -19,10 +19,12 @@ public class LeaveRepository: ILeaveRepository
         var leaveRequests = await _dbContext.LeaveRequests
             .Include(lr => lr.Employee)
             .Include(lr => lr.Approvals)
+            .ThenInclude(a => a.Approver)
             .Select(lr => new LeaveRequestResponseDto
             {
                 Id = lr.Id,
                 EmployeeName = lr.Employee.FullName,
+                EmployeeId = lr.Employee.Id,
                 Department = lr.Employee.Department,
                 LeaveType = lr.LeaveType,
                 StartDate = lr.StartDate,
@@ -31,6 +33,14 @@ public class LeaveRepository: ILeaveRepository
                 Status = lr.Status,
                 DateCreated = lr.DateCreated,
                 RejectionReason = lr.RejectionReason,
+                Approvals = lr.Approvals.Select(a => new LeaveApprovalResponseDto
+                {
+                    ApproverId = a.ApproverId,
+                    ApproverName = a.Approver.FullName,
+                    Action = a.Action,
+                    Reason = a.Reason,
+                    DateActed = a.DateActed
+                }).ToList()
             })
             .ToListAsync();
 
@@ -47,10 +57,12 @@ public class LeaveRepository: ILeaveRepository
         var leaveRequest = await _dbContext.LeaveRequests
             .Include(lr => lr.Employee)
             .Include(lr => lr.Approvals)
+            .ThenInclude(a => a.Approver)
             .Select(lr => new LeaveRequestResponseDto
             {
                 Id = lr.Id,
                 EmployeeName = lr.Employee.FullName,
+                EmployeeId = lr.Employee.Id,
                 Department = lr.Employee.Department,
                 LeaveType = lr.LeaveType,
                 StartDate = lr.StartDate,
@@ -59,6 +71,14 @@ public class LeaveRepository: ILeaveRepository
                 Status = lr.Status,
                 DateCreated = lr.DateCreated,
                 RejectionReason = lr.RejectionReason,
+                Approvals = lr.Approvals.Select(a => new LeaveApprovalResponseDto
+                {
+                    ApproverId = a.ApproverId,
+                    ApproverName = a.Approver.FullName,
+                    Action = a.Action,
+                    Reason = a.Reason,
+                    DateActed = a.DateActed
+                }).ToList()
             })
             .FirstOrDefaultAsync(x => x.Id == id);
 
@@ -174,7 +194,7 @@ public class LeaveRepository: ILeaveRepository
         return true;
     }
 
-    public async Task<LeaveRequestResponseDto> ApproveLeaveRequest(int id, ApproveLeaveRequestDto approveLeaveRequestDto)
+    public async Task<LeaveRequestResponseDto> ApproveLeaveRequest(int id, LeaveActionRequestDto leaveActionRequestDto)
     {
         var leave = await _dbContext.LeaveRequests
             .Include(lr => lr.Employee)
@@ -197,13 +217,13 @@ public class LeaveRepository: ILeaveRepository
             throw new Exception("Rejected leave requests cannot be approved.");
         }
 
-        if (approveLeaveRequestDto.ApproverId == leave.EmployeeId)
+        if (leaveActionRequestDto.ApproverId == leave.EmployeeId)
         {
             throw new Exception("You are not allowed to approve your own request.");
         }
         
         var alreadyActed = leave.Approvals.Any(a 
-            => a.ApproverId == approveLeaveRequestDto.ApproverId);
+            => a.ApproverId == leaveActionRequestDto.ApproverId);
         
         if (alreadyActed)
         {
@@ -226,9 +246,9 @@ public class LeaveRepository: ILeaveRepository
         var leaveApproval = new LeaveApproval()
         {
             LeaveRequestId = leave.Id,
-            ApproverId = approveLeaveRequestDto.ApproverId,
+            ApproverId = leaveActionRequestDto.ApproverId,
             Action = LeaveConstants.Approved,
-            Reason = approveLeaveRequestDto.Reason,
+            Reason = leaveActionRequestDto.Reason,
             DateActed = DateTime.UtcNow
         };
         
@@ -240,7 +260,7 @@ public class LeaveRepository: ILeaveRepository
         return await GetLeaveRequestById(id);
     }
 
-    public async Task<LeaveRequestResponseDto> RejectLeaveRequest(int id, RejectLeaveRequestDto rejectLeaveRequestDto)
+    public async Task<LeaveRequestResponseDto> RejectLeaveRequest(int id, LeaveActionRequestDto leaveActionRequestDto)
     {
         var leave = await _dbContext.LeaveRequests
             .Include(lr => lr.Employee)
@@ -262,13 +282,13 @@ public class LeaveRepository: ILeaveRepository
             throw new Exception("Approved leave requests cannot be rejected");
         }
 
-        if (rejectLeaveRequestDto.ApproverId == leave.EmployeeId)
+        if (leaveActionRequestDto.ApproverId == leave.EmployeeId)
         {
             throw new Exception("You are not allowed to reject your own request.");
         }
         
         var alreadyActed = leave.Approvals.Any(a 
-            => a.ApproverId == rejectLeaveRequestDto.ApproverId);
+            => a.ApproverId == leaveActionRequestDto.ApproverId);
         
         if (alreadyActed)
         {
@@ -277,14 +297,14 @@ public class LeaveRepository: ILeaveRepository
         }
         
         leave.Status = LeaveConstants.Rejected;
-        leave.RejectionReason = rejectLeaveRequestDto.Reason;
+        leave.RejectionReason = leaveActionRequestDto.Reason;
 
         var leaveApproval = new LeaveApproval()
         {
             LeaveRequestId = leave.Id,
-            ApproverId = rejectLeaveRequestDto.ApproverId,
+            ApproverId = leaveActionRequestDto.ApproverId,
             Action = LeaveConstants.Rejected,
-            Reason = rejectLeaveRequestDto.Reason,
+            Reason = leaveActionRequestDto.Reason,
             DateActed = DateTime.UtcNow
         };
         
@@ -332,6 +352,7 @@ public class LeaveRepository: ILeaveRepository
            {
                Id = lr.Id,
                EmployeeName = lr.Employee.FullName,
+               EmployeeId = lr.Employee.Id,
                Department = lr.Employee.Department,
                LeaveType = lr.LeaveType,
                StartDate = lr.StartDate,
@@ -340,6 +361,14 @@ public class LeaveRepository: ILeaveRepository
                Status = lr.Status,
                DateCreated = lr.DateCreated,
                RejectionReason = lr.RejectionReason,
+               Approvals = lr.Approvals.Select(a => new LeaveApprovalResponseDto
+               {
+                   ApproverId = a.ApproverId,
+                   ApproverName = a.Approver.FullName,
+                   Action = a.Action,
+                   Reason = a.Reason,
+                   DateActed = a.DateActed
+               }).ToList()
            })
            .ToListAsync();
 

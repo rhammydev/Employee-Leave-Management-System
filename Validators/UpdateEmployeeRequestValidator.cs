@@ -4,9 +4,9 @@ using FluentValidation;
 
 namespace EmployeeLeaveManagementSystem.Validators;
 
-public class CreateEmployeeRequestValidator : AbstractValidator<CreateEmployeeRequestDto>
+public class UpdateEmployeeRequestValidator : AbstractValidator<UpdateEmployeeRequestDto>
 {
-    public CreateEmployeeRequestValidator()
+    public UpdateEmployeeRequestValidator()
     {
         RuleFor(e => e.FullName).NotEmpty().Length(3,100)
             .WithMessage("Full name is required and must have between 3 and 100 characters");

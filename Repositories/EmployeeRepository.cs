@@ -69,11 +69,14 @@ public class EmployeeRepository : IEmployeeRepository
         return employee;
     }
 
-    public async Task<Employee> UpdateEmployee(int id, CreateEmployeeRequestDto createEmployeeRequestDto)
+    public async Task<Employee> UpdateEmployee(int id, UpdateEmployeeRequestDto updateEmployeeRequestDto)
     {
         var employee = await _dbContext.Employees.FirstOrDefaultAsync(e => e.Id == id);
         
-        var employeeExist = await _dbContext.Employees.AnyAsync(e => e.Email.ToLower() == createEmployeeRequestDto.Email.ToLower());
+        var employeeExist = await _dbContext.Employees.AnyAsync(e => 
+            e.Email.ToLower() == updateEmployeeRequestDto.Email.ToLower()
+            && e.Id != id);
+        
         if (employeeExist)
         {
             throw new Exception("Employee already exists");
@@ -81,9 +84,9 @@ public class EmployeeRepository : IEmployeeRepository
         
         if (employee != null)
         {
-            employee.FullName = createEmployeeRequestDto.FullName;
-            employee.Email = createEmployeeRequestDto.Email;
-            employee.Department = createEmployeeRequestDto.Department;
+            employee.FullName = updateEmployeeRequestDto.FullName;
+            employee.Email = updateEmployeeRequestDto.Email;
+            employee.Department = updateEmployeeRequestDto.Department;
         };
 
         

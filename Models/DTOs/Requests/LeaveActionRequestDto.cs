@@ -1,6 +1,6 @@
 namespace EmployeeLeaveManagementSystem.Models.DTOs;
 
-public class ApproveLeaveRequestDto
+public class LeaveActionRequestDto
 {
     public int ApproverId { get; set; }
     

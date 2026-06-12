@@ -52,16 +52,16 @@ public class LeavesController : ControllerBase
     }
 
     [HttpPost("approve/{id}")]
-    public async Task<IActionResult> ApproveLeaveRequest(int id, ApproveLeaveRequestDto approveLeaveRequestDto)
+    public async Task<IActionResult> ApproveLeaveRequest(int id, LeaveActionRequestDto leaveActionRequestDto)
     {
-        var leaveRequest = await _repository.ApproveLeaveRequest(id, approveLeaveRequestDto);
+        var leaveRequest = await _repository.ApproveLeaveRequest(id, leaveActionRequestDto);
         return Ok(leaveRequest);
     }
 
     [HttpPost("reject/{id}")]
-    public async Task<IActionResult> RejectLeaveRequest(int id, RejectLeaveRequestDto  rejectLeaveRequestDto)
+    public async Task<IActionResult> RejectLeaveRequest(int id, LeaveActionRequestDto  leaveActionRequestDto)
     {
-        var leaveRequest = await _repository.RejectLeaveRequest(id, rejectLeaveRequestDto);
+        var leaveRequest = await _repository.RejectLeaveRequest(id, leaveActionRequestDto);
         return Ok(leaveRequest);
     }
 
@@ -74,7 +74,7 @@ public class LeavesController : ControllerBase
 
    
 
-    [HttpGet("status/ {status}")]
+    [HttpGet("status/{status}")]
     public async Task<IActionResult> GetLeaveByStatus(string status)
     {
         var leaves = await _repository.GetLeaveByStatus(status);

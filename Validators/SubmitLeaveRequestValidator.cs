@@ -4,9 +4,9 @@ using FluentValidation;
 
 namespace EmployeeLeaveManagementSystem.Validators;
 
-public class SubmitLeaveValidation : AbstractValidator<SubmitLeaveRequestDto>
+public class SubmitLeaveRequestValidator : AbstractValidator<SubmitLeaveRequestDto>
 {
-    public SubmitLeaveValidation()
+    public SubmitLeaveRequestValidator()
     {
         RuleFor(leave => leave.EmployeeId).NotEmpty().WithMessage("Employee id is required");
         
