@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using EmployeeLeaveManagementSystem.Data;
+using EmployeeLeaveManagementSystem.Middleware;
 using EmployeeLeaveManagementSystem.Repositories;
 using EmployeeLeaveManagementSystem.Validators;
 using FluentValidation;
@@ -25,10 +26,12 @@ builder.Services.AddScoped<ILeaveRepository, LeaveRepository>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddCors(o => o.AddPolicy("Dev",
-    p => p.WithOrigins("http://localhost:5173").AllowAnyHeader().AllowAnyMethod()));
+builder.Services.AddCors(o => o.AddPolicy("Client",
+    p => p.WithOrigins("http://localhost:5173","https://employee-leave-management-client.vercel.app").AllowAnyHeader().AllowAnyMethod()));
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -37,7 +40,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors("Dev");
+app.UseCors("Client");
 
 app.UseHttpsRedirection();
 

@@ -1,5 +1,6 @@
 using EmployeeLeaveManagementSystem.Constants;
 using EmployeeLeaveManagementSystem.Data;
+using EmployeeLeaveManagementSystem.Exceptions;
 using EmployeeLeaveManagementSystem.Models;
 using EmployeeLeaveManagementSystem.Models.DTOs;
 using Microsoft.EntityFrameworkCore;
@@ -44,11 +45,6 @@ public class LeaveRepository: ILeaveRepository
             })
             .ToListAsync();
 
-        if (leaveRequests.Count == 0)
-        {
-            throw new Exception("Leave Request Not Found");
-        }
-
         return leaveRequests;
     }
 
@@ -82,7 +78,7 @@ public class LeaveRepository: ILeaveRepository
             })
             .FirstOrDefaultAsync(x => x.Id == id);
 
-        return leaveRequest ?? throw new Exception("Leave Request Not Found");
+        return leaveRequest ?? throw new NotFoundException("Leave Request Not Found");
     }
 
     public async Task<Leave> SubmitLeaveRequest(SubmitLeaveRequestDto submitLeaveRequestDto)
@@ -90,16 +86,16 @@ public class LeaveRepository: ILeaveRepository
         var employeeExist = await _dbContext.Employees.AnyAsync(e => e.Id == submitLeaveRequestDto.EmployeeId);
         if (!employeeExist)
         {
-            throw new Exception("Employee not found");
+            throw new NotFoundException("Employee not found");
         }
         
         if(submitLeaveRequestDto.StartDate > submitLeaveRequestDto.EndDate)
         {
-            throw new Exception("Start Date cannot be later than End Date.");
+            throw new BadRequestException("Start Date cannot be later than End Date.");
         }
         
         if (submitLeaveRequestDto.StartDate < DateOnly.FromDateTime(DateTime.UtcNow))
-            throw new Exception("Start Date cannot be in the past.");
+            throw new BadRequestException("Start Date cannot be in the past.");
        
         bool hasOverlap = await _dbContext.LeaveRequests
             .AnyAsync(lr =>
@@ -110,7 +106,7 @@ public class LeaveRepository: ILeaveRepository
             );
 
         if (hasOverlap)
-            throw new Exception("Employee already has a leave request overlapping this period.");
+            throw new ConflictException("Employee already has a leave request overlapping this period.");
 
         var leaveRequest = new Leave()
         {
@@ -125,8 +121,6 @@ public class LeaveRepository: ILeaveRepository
         await _dbContext.LeaveRequests.AddAsync(leaveRequest);
         await _dbContext.SaveChangesAsync();
         return leaveRequest;
-
-
     }
 
     public async Task<Leave> UpdateLeaveRequest(int id, SubmitLeaveRequestDto submitLeaveRequestDto)
@@ -134,25 +128,25 @@ public class LeaveRepository: ILeaveRepository
         var leaveExist = await _dbContext.LeaveRequests.FirstOrDefaultAsync(lr => lr.Id == id);
         if (leaveExist  == null)
         {
-            throw new Exception("Leave Request Not Found");
+            throw new NotFoundException("Leave Request Not Found");
         }
         
         var employeeExist = await _dbContext.Employees.AnyAsync(e => e.Id == submitLeaveRequestDto.EmployeeId);
         if (!employeeExist)
         {
-            throw new Exception("Employee not found");
+            throw new NotFoundException("Employee not found");
         }
         
         if (leaveExist.Status != LeaveConstants.Pending)
-            throw new Exception("Only pending leave requests can be updated.");
+            throw new ConflictException("Only pending leave requests can be updated.");
         
         if(submitLeaveRequestDto.StartDate > submitLeaveRequestDto.EndDate)
         {
-            throw new Exception("Start Date cannot be later than End Date.");
+            throw new BadRequestException("Start Date cannot be later than End Date.");
         }
         
         if (submitLeaveRequestDto.StartDate < DateOnly.FromDateTime(DateTime.UtcNow))
-            throw new Exception("Start Date cannot be in the past.");
+            throw new BadRequestException("Start Date cannot be in the past.");
         
         bool hasOverlap = await _dbContext.LeaveRequests
             .AnyAsync(lr =>
@@ -164,18 +158,16 @@ public class LeaveRepository: ILeaveRepository
             );
 
         if (hasOverlap)
-            throw new Exception("Employee already has a leave request overlapping this period.");
+            throw new ConflictException("Employee already has a leave request overlapping this period.");
         
         leaveExist.EmployeeId = submitLeaveRequestDto.EmployeeId;
         leaveExist.StartDate = submitLeaveRequestDto.StartDate;
         leaveExist.EndDate = submitLeaveRequestDto.EndDate;
         leaveExist.Reason = submitLeaveRequestDto.Reason;
         leaveExist.LeaveType = submitLeaveRequestDto.LeaveType;
-     
         
         await _dbContext.SaveChangesAsync();
         return leaveExist;
-        
     }
 
     public async Task<bool> DeleteLeaveRequest(int id)
@@ -183,11 +175,11 @@ public class LeaveRepository: ILeaveRepository
         var leave = await _dbContext.LeaveRequests.FirstOrDefaultAsync(lr => lr.Id == id);
         if (leave == null)
         {
-            throw new Exception("Leave Request Not Found");
+            throw new NotFoundException("Leave Request Not Found");
         }
         
         if (leave.Status == LeaveConstants.Approved)
-            throw new InvalidOperationException("Approved leave requests cannot be deleted.");
+            throw new ConflictException("Approved leave requests cannot be deleted.");
         
         _dbContext.LeaveRequests.Remove(leave);
         await _dbContext.SaveChangesAsync();
@@ -204,22 +196,22 @@ public class LeaveRepository: ILeaveRepository
         
         if (leave == null)
         {
-            throw new Exception("Leave Request Not Found");
+            throw new NotFoundException("Leave Request Not Found");
         }
 
         if (leave.Status == LeaveConstants.Approved)
         {
-            throw new Exception("Approved leave requests cannot be approved.");
+            throw new ConflictException("Approved leave requests cannot be approved.");
         }
 
         if (leave.Status == LeaveConstants.Rejected)
         {
-            throw new Exception("Rejected leave requests cannot be approved.");
+            throw new BadRequestException("Rejected leave requests cannot be approved.");
         }
 
         if (leaveActionRequestDto.ApproverId == leave.EmployeeId)
         {
-            throw new Exception("You are not allowed to approve your own request.");
+            throw new BadRequestException("You are not allowed to approve your own request.");
         }
         
         var alreadyActed = leave.Approvals.Any(a 
@@ -227,7 +219,7 @@ public class LeaveRepository: ILeaveRepository
         
         if (alreadyActed)
         {
-            throw new Exception(
+            throw new ConflictException(
                 "You have already taken an action on this leave request.");
         }
         
@@ -252,8 +244,6 @@ public class LeaveRepository: ILeaveRepository
             DateActed = DateTime.UtcNow
         };
         
-        
-        
         await _dbContext.LeaveApprovals.AddAsync(leaveApproval);
         leave.Approvals.Add(leaveApproval);
         await _dbContext.SaveChangesAsync();
@@ -269,22 +259,22 @@ public class LeaveRepository: ILeaveRepository
         
         if (leave == null)
         {
-            throw new Exception("Leave Request Not Found");
+            throw new NotFoundException("Leave Request Not Found");
         }
 
         if (leave.Status == LeaveConstants.Rejected)
         {
-            throw new Exception("Rejected leave requests cannot be rejected");
+            throw new ConflictException("Rejected leave requests cannot be rejected");
         }
 
         if (leave.Status == LeaveConstants.Approved)
         {
-            throw new Exception("Approved leave requests cannot be rejected");
+            throw new ConflictException("Approved leave requests cannot be rejected");
         }
 
         if (leaveActionRequestDto.ApproverId == leave.EmployeeId)
         {
-            throw new Exception("You are not allowed to reject your own request.");
+            throw new BadRequestException("You are not allowed to reject your own request.");
         }
         
         var alreadyActed = leave.Approvals.Any(a 
@@ -292,7 +282,7 @@ public class LeaveRepository: ILeaveRepository
         
         if (alreadyActed)
         {
-            throw new Exception(
+            throw new ConflictException(
                 "You have already taken an action on this leave request.");
         }
         
@@ -318,7 +308,7 @@ public class LeaveRepository: ILeaveRepository
        var departmentExists = await _dbContext.Employees.AnyAsync(e => e.Department.ToLower() == department.ToLower());
        if (!departmentExists)
        {
-           throw new Exception($"No employee found in {department} deparment");
+           throw new NotFoundException($"No employee found in {department} deparment");
        }
 
        var stats = await _dbContext.LeaveRequests
@@ -342,7 +332,7 @@ public class LeaveRepository: ILeaveRepository
     {
        if (!LeaveConstants.ValidStatus.Contains(status.ToUpper()))
          {
-             throw new Exception($"Action must be one of {string.Join(", ", LeaveConstants.JoinedStatus)}");
+             throw new BadRequestException($"Action must be one of {string.Join(", ", LeaveConstants.JoinedStatus)}");
          }
        
        return await _dbContext.LeaveRequests
@@ -371,7 +361,5 @@ public class LeaveRepository: ILeaveRepository
                }).ToList()
            })
            .ToListAsync();
-
-
     } 
 }
