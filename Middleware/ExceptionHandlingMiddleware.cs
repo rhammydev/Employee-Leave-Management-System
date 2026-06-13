@@ -4,16 +4,6 @@ using EmployeeLeaveManagementSystem.Exceptions;
 
 namespace EmployeeLeaveManagementSystem.Middleware;
 
-/// <summary>
-/// Catches exceptions thrown anywhere in the pipeline and converts them into a
-/// consistent JSON error response: { "message": "..." }
-///
-/// - NotFoundException        -> 404
-/// - BadRequestException      -> 400
-/// - ConflictException        -> 409
-/// - InvalidOperationException -> 409
-/// - anything else            -> 500
-/// </summary>
 public class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate _next;
