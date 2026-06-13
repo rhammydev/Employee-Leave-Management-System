@@ -1,5 +1,6 @@
 using EmployeeLeaveManagementSystem.Constants;
 using EmployeeLeaveManagementSystem.Data;
+using EmployeeLeaveManagementSystem.Exceptions;
 using EmployeeLeaveManagementSystem.Models;
 using EmployeeLeaveManagementSystem.Models.DTOs;
 using Microsoft.EntityFrameworkCore;
@@ -46,7 +47,7 @@ public class EmployeeRepository : IEmployeeRepository
                 LeaveRequests = e.LeaveRequests
             })
             .FirstOrDefaultAsync(e => e.Id == employeeId);
-        return employee ?? throw new Exception("Employee not found");
+        return employee ?? throw new NotFoundException("Employee not found");
     }
 
     public async Task<Employee> CreateEmployee(CreateEmployeeRequestDto createEmployeeRequestDto)
@@ -54,7 +55,7 @@ public class EmployeeRepository : IEmployeeRepository
         var employeeExist = await _dbContext.Employees.AnyAsync(e => e.Email.ToLower() == createEmployeeRequestDto.Email.ToLower());
         if (employeeExist)
         {
-            throw new Exception("Employee already exists");
+            throw new ConflictException("Employee already exists");
         }
 
         var employee = new Employee()
@@ -79,7 +80,7 @@ public class EmployeeRepository : IEmployeeRepository
         
         if (employeeExist)
         {
-            throw new Exception("Employee already exists");
+            throw new ConflictException("Employee already exists");
         }
         
         if (employee != null)
@@ -91,7 +92,7 @@ public class EmployeeRepository : IEmployeeRepository
 
         
         await _dbContext.SaveChangesAsync();
-        return employee ?? throw new Exception("Employee not found");
+        return employee ?? throw new NotFoundException("Employee not found");
 
     }
 
@@ -100,7 +101,7 @@ public class EmployeeRepository : IEmployeeRepository
         var employee = await _dbContext.Employees.FirstOrDefaultAsync(e => e.Id == employeeId);
         if (employee == null)
         {
-          throw new Exception("Employee not found");  
+          throw new NotFoundException("Employee not found");  
         }
         
         _dbContext.Employees.Remove(employee);
@@ -115,7 +116,7 @@ public class EmployeeRepository : IEmployeeRepository
         
         if (employee == null)
         {
-            throw new Exception("Employee not found");
+            throw new NotFoundException("Employee not found");
         }
         
         var leaveHistory = await _dbContext.LeaveRequests
@@ -137,7 +138,7 @@ public class EmployeeRepository : IEmployeeRepository
         
         if (leaveHistory.Count == 0)
         {
-            throw new Exception($"No leave history found for employee: {id}");
+            throw new NotFoundException($"No leave history found for employee: {id}");
         }
         return leaveHistory;
     }
@@ -169,5 +170,4 @@ public class EmployeeRepository : IEmployeeRepository
         
         return employees;
     }
-
 }

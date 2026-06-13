@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using EmployeeLeaveManagementSystem.Data;
+using EmployeeLeaveManagementSystem.Middleware;
 using EmployeeLeaveManagementSystem.Repositories;
 using EmployeeLeaveManagementSystem.Validators;
 using FluentValidation;
@@ -23,7 +24,8 @@ builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddScoped<ILeaveRepository, LeaveRepository>();
 
 
-builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<ApplicationDbContext>(options => 
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddCors(options =>
 {
@@ -47,6 +49,8 @@ if (!string.IsNullOrEmpty(port))
 }
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
